@@ -4,6 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { AnimatePresence } from "framer-motion";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/components/protected-route";
 
 // Pages
 import OnboardingIntro from "@/pages/onboarding/intro";
@@ -15,6 +17,7 @@ import Alarms from "@/pages/alarms";
 import Chat from "@/pages/chat";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
+import AuthPage from "@/pages/auth-page";
 
 function Router() {
   const [location] = useLocation();
@@ -38,11 +41,25 @@ function Router() {
           </>
         ) : (
           <>
-            <Route path="/" component={Home} />
-            <Route path="/tasks" component={Tasks} />
-            <Route path="/alarms" component={Alarms} />
-            <Route path="/chat" component={Chat} />
-            <Route path="/settings" component={Settings} />
+            {/* Protected routes */}
+            <ProtectedRoute path="/">
+              <Home />
+            </ProtectedRoute>
+            <ProtectedRoute path="/tasks">
+              <Tasks />
+            </ProtectedRoute>
+            <ProtectedRoute path="/alarms">
+              <Alarms />
+            </ProtectedRoute>
+            <ProtectedRoute path="/chat">
+              <Chat />
+            </ProtectedRoute>
+            <ProtectedRoute path="/settings">
+              <Settings />
+            </ProtectedRoute>
+            
+            {/* Public routes */}
+            <Route path="/auth" component={AuthPage} />
           </>
         )}
         <Route component={NotFound} />
@@ -62,8 +79,10 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <AuthProvider>
+        <Router />
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

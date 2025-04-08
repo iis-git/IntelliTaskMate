@@ -14,16 +14,12 @@ import {
   LightningIcon, TaskIcon, SliderIcon, CalendarIcon, LogoutIcon,
   ChevronRightIcon
 } from '@/lib/icons';
-import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function Settings() {
   const { toast } = useToast();
-  
-  // Get user info
-  const { data: user } = useQuery({
-    queryKey: ['/api/user'],
-  });
+  const { user, logoutMutation } = useAuth();
 
   // Toggle handlers (would connect to actual state in a real app)
   const handleToggle = (setting: string, value: boolean) => {
@@ -193,9 +189,10 @@ export default function Settings() {
                       size="icon"
                       className="h-5 w-5 p-0"
                       onClick={() => {
+                        logoutMutation.mutate();
                         toast({
-                          title: 'Logged out',
-                          description: 'You have been logged out of your account.',
+                          title: 'Logging out',
+                          description: 'You are being logged out of your account.',
                         });
                       }}
                     >

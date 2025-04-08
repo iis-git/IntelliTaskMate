@@ -3,32 +3,36 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTaskSchema, insertAlarmSchema, insertCategorySchema, insertMessageSchema } from "@shared/schema";
 import OpenAI from "openai";
+import { authenticate, register, login, getCurrentUser } from "./auth";
+import "./types"; // Import types to extend Express Request
 
 // Initialize OpenAI if API key is available
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || "dummy-key",
 }) : null;
 
-// Default user ID for demo
-const DEFAULT_USER_ID = 1;
-
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Authentication middleware (simplified for demo)
-  const authenticate = (req: Request, res: Response, next: () => void) => {
-    req.body.userId = DEFAULT_USER_ID;
-    next();
-  };
+  // Auth routes
+  app.post("/api/auth/register", register);
+  app.post("/api/auth/login", login);
+  app.get("/api/auth/user", authenticate, getCurrentUser);
 
   // Task routes
   app.get("/api/tasks", authenticate, async (req, res) => {
-    const tasks = await storage.getTasks(DEFAULT_USER_ID);
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const tasks = await storage.getTasks(req.user.id);
     res.json(tasks);
   });
 
   app.post("/api/tasks", authenticate, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     try {
       const taskData = insertTaskSchema.parse(req.body);
-      const task = await storage.createTask(taskData, DEFAULT_USER_ID);
+      const task = await storage.createTask(taskData, req.user.id);
       res.status(201).json(task);
     } catch (error) {
       res.status(400).json({ error: "Invalid task data" });
@@ -36,6 +40,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.patch("/api/tasks/:id", authenticate, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     try {
       const id = parseInt(req.params.id);
       const taskData = insertTaskSchema.partial().parse(req.body);
@@ -52,6 +59,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/tasks/:id", authenticate, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     const id = parseInt(req.params.id);
     const success = await storage.deleteTask(id);
     
@@ -64,14 +74,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Alarm routes
   app.get("/api/alarms", authenticate, async (req, res) => {
-    const alarms = await storage.getAlarms(DEFAULT_USER_ID);
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const alarms = await storage.getAlarms(req.user.id);
     res.json(alarms);
   });
 
   app.post("/api/alarms", authenticate, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     try {
       const alarmData = insertAlarmSchema.parse(req.body);
-      const alarm = await storage.createAlarm(alarmData, DEFAULT_USER_ID);
+      const alarm = await storage.createAlarm(alarmData, req.user.id);
       res.status(201).json(alarm);
     } catch (error) {
       res.status(400).json({ error: "Invalid alarm data" });
@@ -79,6 +95,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.patch("/api/alarms/:id", authenticate, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     try {
       const id = parseInt(req.params.id);
       const alarmData = insertAlarmSchema.partial().parse(req.body);
@@ -95,6 +114,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/alarms/:id", authenticate, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     const id = parseInt(req.params.id);
     const success = await storage.deleteAlarm(id);
     
@@ -107,14 +129,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Category routes
   app.get("/api/categories", authenticate, async (req, res) => {
-    const categories = await storage.getCategories(DEFAULT_USER_ID);
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const categories = await storage.getCategories(req.user.id);
     res.json(categories);
   });
 
   app.post("/api/categories", authenticate, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     try {
       const categoryData = insertCategorySchema.parse(req.body);
-      const category = await storage.createCategory(categoryData, DEFAULT_USER_ID);
+      const category = await storage.createCategory(categoryData, req.user.id);
       res.status(201).json(category);
     } catch (error) {
       res.status(400).json({ error: "Invalid category data" });
@@ -123,20 +151,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Message routes
   app.get("/api/messages", authenticate, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-    const messages = await storage.getMessages(DEFAULT_USER_ID, limit);
+    const messages = await storage.getMessages(req.user.id, limit);
     res.json(messages);
   });
 
   app.post("/api/messages", authenticate, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     try {
       const messageData = insertMessageSchema.parse(req.body);
-      const message = await storage.createMessage(messageData, DEFAULT_USER_ID);
+      const message = await storage.createMessage(messageData, req.user.id);
       res.status(201).json(message);
 
       // If this is a user message, generate AI response
       if (messageData.isUser) {
-        await generateAIResponse(messageData.content, DEFAULT_USER_ID, res);
+        await generateAIResponse(messageData.content, req.user.id, res);
       }
     } catch (error) {
       res.status(400).json({ error: "Invalid message data" });
@@ -145,6 +179,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AI Assistant routes
   app.post("/api/ai/chat", authenticate, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     const { message } = req.body;
     
     if (!message) {
@@ -153,10 +190,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       // Store user message
-      await storage.createMessage({ content: message, isUser: true }, DEFAULT_USER_ID);
+      await storage.createMessage({ content: message, isUser: true }, req.user.id);
       
       // Generate AI response
-      await generateAIResponse(message, DEFAULT_USER_ID, res);
+      await generateAIResponse(message, req.user.id, res);
     } catch (error) {
       console.error("AI chat error:", error);
       res.status(500).json({ error: "Failed to process message" });
@@ -165,7 +202,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // User routes
   app.get("/api/user", authenticate, async (req, res) => {
-    const user = await storage.getUser(DEFAULT_USER_ID);
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const user = await storage.getUser(req.user.id);
     
     if (!user) {
       return res.status(404).json({ error: "User not found" });

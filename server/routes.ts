@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTaskSchema, insertAlarmSchema, insertCategorySchema, insertMessageSchema } from "@shared/schema";
+import { insertTaskSchema, insertAlarmSchema, insertCategorySchema, insertMessageSchema } from "../shared/schema";
 import OpenAI from "openai";
 import { authenticate, register, login, getCurrentUser } from "./auth";
 import "./types"; // Import types to extend Express Request

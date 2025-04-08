@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { storage } from './storage';
-import { User, InsertUser } from '@shared/schema';
+import { User, InsertUser } from '../shared/schema';
 
 // This should be in a .env file in a real application
 const JWT_SECRET = process.env.JWT_SECRET || 'AURA_VERY_SECRET_KEY_CHANGE_ME_IN_PRODUCTION';

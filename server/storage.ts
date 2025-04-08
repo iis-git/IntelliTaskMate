@@ -5,7 +5,7 @@ import {
   Message, InsertMessage,
   User, InsertUser,
   users, tasks, alarms, categories, messages
-} from "@shared/schema";
+} from "../shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 

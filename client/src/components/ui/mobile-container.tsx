@@ -14,7 +14,7 @@ export function MobileContainer({
   fullHeight = true,
 }: MobileContainerProps) {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-b from-[#1A0B2E] to-[#13091F]">
+    <div className="min-h-screen w-full flex items-center justify-center p-2 bg-gradient-to-b from-[#1A0B2E] to-[#13091F]">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -22,7 +22,7 @@ export function MobileContainer({
         className={cn(
           "w-full max-w-md mx-auto overflow-hidden rounded-3xl shadow-2xl border border-gray-800 bg-[#13091F]",
           {
-            "h-[600px]": fullHeight,
+            "h-[700px] max-h-[90vh]": fullHeight,
           },
           className
         )}

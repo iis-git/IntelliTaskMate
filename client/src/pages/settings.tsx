@@ -16,17 +16,19 @@ import {
 } from '@/lib/icons';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { useSettings } from '@/hooks/use-settings';
+import { Loader2 } from 'lucide-react';
 
 export default function Settings() {
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
+  const { settings, updateSettings, isLoading, isUpdating } = useSettings();
 
-  // Toggle handlers (would connect to actual state in a real app)
-  const handleToggle = (setting: string, value: boolean) => {
-    toast({
-      title: `${setting} ${value ? 'enabled' : 'disabled'}`,
-      description: `The ${setting.toLowerCase()} setting has been ${value ? 'enabled' : 'disabled'}.`,
-    });
+  // Toggle handlers that connect to the API
+  const handleToggle = (setting: 'darkMode' | 'notifications' | 'aiSuggestions' | 'autoTaskCreation' | 'calendarSync', value: boolean) => {
+    if (settings) {
+      updateSettings({ [setting]: value });
+    }
   };
 
   // Navigation handlers
@@ -36,6 +38,16 @@ export default function Settings() {
       description: `You would navigate to the ${section} settings.`,
     });
   };
+  
+  if (isLoading) {
+    return (
+      <MobileContainer>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+        </div>
+      </MobileContainer>
+    );
+  }
 
   return (
     <MobileContainer>
@@ -85,9 +97,10 @@ export default function Settings() {
                       <span className="text-white">Dark Mode</span>
                     </div>
                     <Switch
-                      checked={true}
-                      onCheckedChange={(checked) => handleToggle('Dark Mode', checked)}
+                      checked={settings?.darkMode || false}
+                      onCheckedChange={(checked) => handleToggle('darkMode', checked)}
                       className="data-[state=checked]:bg-gradient-to-r from-purple-400 to-purple-600"
+                      disabled={isUpdating}
                     />
                   </div>
                   
@@ -97,9 +110,10 @@ export default function Settings() {
                       <span className="text-white">Notifications</span>
                     </div>
                     <Switch
-                      checked={true}
-                      onCheckedChange={(checked) => handleToggle('Notifications', checked)}
+                      checked={settings?.notifications || false}
+                      onCheckedChange={(checked) => handleToggle('notifications', checked)}
                       className="data-[state=checked]:bg-gradient-to-r from-purple-400 to-purple-600"
+                      disabled={isUpdating}
                     />
                   </div>
                   
@@ -129,9 +143,10 @@ export default function Settings() {
                       <span className="text-white">AI Suggestions</span>
                     </div>
                     <Switch
-                      checked={true}
-                      onCheckedChange={(checked) => handleToggle('AI Suggestions', checked)}
+                      checked={settings?.aiSuggestions || false}
+                      onCheckedChange={(checked) => handleToggle('aiSuggestions', checked)}
                       className="data-[state=checked]:bg-gradient-to-r from-purple-400 to-purple-600"
+                      disabled={isUpdating}
                     />
                   </div>
                   
@@ -141,9 +156,10 @@ export default function Settings() {
                       <span className="text-white">Auto Task Creation</span>
                     </div>
                     <Switch
-                      checked={true}
-                      onCheckedChange={(checked) => handleToggle('Auto Task Creation', checked)}
+                      checked={settings?.autoTaskCreation || false}
+                      onCheckedChange={(checked) => handleToggle('autoTaskCreation', checked)}
                       className="data-[state=checked]:bg-gradient-to-r from-purple-400 to-purple-600"
+                      disabled={isUpdating}
                     />
                   </div>
                   
@@ -173,9 +189,10 @@ export default function Settings() {
                       <span className="text-white">Sync with Calendar</span>
                     </div>
                     <Switch
-                      checked={false}
-                      onCheckedChange={(checked) => handleToggle('Calendar Sync', checked)}
+                      checked={settings?.calendarSync || false}
+                      onCheckedChange={(checked) => handleToggle('calendarSync', checked)}
                       className="data-[state=checked]:bg-gradient-to-r from-purple-400 to-purple-600"
+                      disabled={isUpdating}
                     />
                   </div>
                   

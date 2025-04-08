@@ -5,6 +5,10 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/hooks/use-auth";
+import { ThemeProvider } from "@/hooks/use-theme";
+
+// Import SCSS styles instead of Tailwind
+import "./styles/main.scss";
 
 // Pages
 import OnboardingIntro from "@/pages/onboarding/intro";
@@ -34,18 +38,20 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AnimatePresence mode="wait">
-          {!hasOnboarded ? (
-            <Switch location={location} key={location}>
-              <Route path="/" component={() => <OnboardingIntro />} />
-              <Route path="/onboarding/tasks" component={() => <OnboardingTasks />} />
-              <Route path="/onboarding/assistant" component={() => <OnboardingAssistant onComplete={completeOnboarding} />} />
-            </Switch>
-          ) : (
-            <AppRouter />
-          )}
-        </AnimatePresence>
-        <Toaster />
+        <ThemeProvider>
+          <AnimatePresence mode="wait">
+            {!hasOnboarded ? (
+              <Switch location={location} key={location}>
+                <Route path="/" component={() => <OnboardingIntro />} />
+                <Route path="/onboarding/tasks" component={() => <OnboardingTasks />} />
+                <Route path="/onboarding/assistant" component={() => <OnboardingAssistant onComplete={completeOnboarding} />} />
+              </Switch>
+            ) : (
+              <AppRouter />
+            )}
+          </AnimatePresence>
+          <Toaster />
+        </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

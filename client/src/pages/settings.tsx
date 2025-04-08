@@ -7,7 +7,8 @@ import StatusBar from '@/components/ui/status-bar';
 import NavBar from '@/components/ui/nav-bar';
 import GradientIcon from '@/components/ui/gradient-icon';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Switch } from '@/components/ui/switch';
+// Import our new SCSS module-based Switch
+import { Switch } from '@/components/ui/switch/index';
 import { Button } from '@/components/ui/button';
 import { 
   UserIcon, DarkModeIcon, NotificationIcon, PrivacyIcon, 
@@ -17,17 +18,24 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useSettings } from '@/hooks/use-settings';
+import { useTheme } from '@/hooks/use-theme';
 import { Loader2 } from 'lucide-react';
 
 export default function Settings() {
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
   const { settings, updateSettings, isLoading, isUpdating } = useSettings();
+  const { isDark, toggleTheme } = useTheme();
 
   // Toggle handlers that connect to the API
   const handleToggle = (setting: 'darkMode' | 'notifications' | 'aiSuggestions' | 'autoTaskCreation' | 'calendarSync', value: boolean) => {
     if (settings) {
       updateSettings({ [setting]: value });
+      
+      // If toggling dark mode, also toggle the theme
+      if (setting === 'darkMode') {
+        toggleTheme();
+      }
     }
   };
 
@@ -99,7 +107,6 @@ export default function Settings() {
                     <Switch
                       checked={settings?.darkMode || false}
                       onCheckedChange={(checked) => handleToggle('darkMode', checked)}
-                      className="data-[state=checked]:bg-gradient-to-r from-purple-400 to-purple-600"
                       disabled={isUpdating}
                     />
                   </div>
@@ -112,7 +119,6 @@ export default function Settings() {
                     <Switch
                       checked={settings?.notifications || false}
                       onCheckedChange={(checked) => handleToggle('notifications', checked)}
-                      className="data-[state=checked]:bg-gradient-to-r from-purple-400 to-purple-600"
                       disabled={isUpdating}
                     />
                   </div>
@@ -145,7 +151,6 @@ export default function Settings() {
                     <Switch
                       checked={settings?.aiSuggestions || false}
                       onCheckedChange={(checked) => handleToggle('aiSuggestions', checked)}
-                      className="data-[state=checked]:bg-gradient-to-r from-purple-400 to-purple-600"
                       disabled={isUpdating}
                     />
                   </div>
@@ -158,7 +163,6 @@ export default function Settings() {
                     <Switch
                       checked={settings?.autoTaskCreation || false}
                       onCheckedChange={(checked) => handleToggle('autoTaskCreation', checked)}
-                      className="data-[state=checked]:bg-gradient-to-r from-purple-400 to-purple-600"
                       disabled={isUpdating}
                     />
                   </div>
@@ -191,7 +195,6 @@ export default function Settings() {
                     <Switch
                       checked={settings?.calendarSync || false}
                       onCheckedChange={(checked) => handleToggle('calendarSync', checked)}
-                      className="data-[state=checked]:bg-gradient-to-r from-purple-400 to-purple-600"
                       disabled={isUpdating}
                     />
                   </div>

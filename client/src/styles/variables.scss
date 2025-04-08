@@ -1,0 +1,105 @@
+// =========================================
+// Color Variables
+// =========================================
+
+// Primary & Secondary Colors
+$color-primary: #6050DC;
+$color-secondary: #30A2FF;
+$color-tertiary: #C041FF;
+
+// Gradient Definitions
+$gradient-purple: linear-gradient(to right, #6050DC, #C041FF);
+$gradient-blue: linear-gradient(to right, #30A2FF, #1E78E0);
+$gradient-background: linear-gradient(to bottom, #1A0B2E, #000);
+
+// Background Colors
+$color-bg-primary: #121212;
+$color-bg-secondary: #1A0B2E;
+$color-bg-tertiary: #2A1B4E;
+
+// Text Colors
+$color-text-primary: #FFFFFF;
+$color-text-secondary: #CCCCDD;
+$color-text-tertiary: #9E9AA7;
+$color-text-disabled: rgba(255, 255, 255, 0.4);
+
+// Utility Colors
+$color-success: #05CE91;
+$color-error: #FF4757;
+$color-warning: #FFBA00;
+$color-info: #3498DB;
+
+// =========================================
+// Spacing Variables
+// =========================================
+$spacing-xs: 0.25rem;  // 4px
+$spacing-sm: 0.5rem;   // 8px
+$spacing-md: 1rem;     // 16px
+$spacing-lg: 1.5rem;   // 24px
+$spacing-xl: 2rem;     // 32px
+$spacing-2xl: 3rem;    // 48px
+
+// =========================================
+// Font Variables
+// =========================================
+$font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$font-family-accent: 'Poppins', $font-family-base;
+
+$font-size-xs: 0.75rem;    // 12px
+$font-size-sm: 0.875rem;   // 14px
+$font-size-md: 1rem;       // 16px
+$font-size-lg: 1.125rem;   // 18px
+$font-size-xl: 1.25rem;    // 20px
+$font-size-2xl: 1.5rem;    // 24px
+$font-size-3xl: 2rem;      // 32px
+
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// =========================================
+// Border Variables
+// =========================================
+$border-radius-sm: 0.25rem;  // 4px
+$border-radius-md: 0.5rem;   // 8px
+$border-radius-lg: 0.75rem;  // 12px
+$border-radius-xl: 1rem;     // 16px
+$border-radius-full: 9999px;
+
+// =========================================
+// Shadow Variables
+// =========================================
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.2);
+$shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+$shadow-glow: 0 0 15px rgba(96, 80, 220, 0.5);
+
+// =========================================
+// Z-index Variables
+// =========================================
+$z-index-dropdown: 1000;
+$z-index-sticky: 1020;
+$z-index-fixed: 1030;
+$z-index-modal-backdrop: 1040;
+$z-index-modal: 1050;
+$z-index-popover: 1060;
+$z-index-tooltip: 1070;
+
+// =========================================
+// Transition Variables
+// =========================================
+$transition-speed-fast: 150ms;
+$transition-speed-normal: 300ms;
+$transition-speed-slow: 500ms;
+$transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+
+// =========================================
+// Breakpoints
+// =========================================
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+$breakpoint-2xl: 1536px;

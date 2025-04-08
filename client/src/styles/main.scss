@@ -1,0 +1,163 @@
+@import './variables.scss';
+@import './mixins.scss';
+
+/*
+ * Aura - Main Stylesheet
+ * Theme: Futuristic Cosmic
+ * Description: Dark theme with purple and blue gradients
+ */
+
+// =========================================
+// CSS Reset & Base Styles
+// =========================================
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: $font-family-base;
+  background: $gradient-background;
+  color: $color-text-primary;
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+a {
+  color: $color-primary;
+  text-decoration: none;
+  transition: color $transition-speed-fast ease;
+  
+  &:hover {
+    color: $color-tertiary;
+  }
+}
+
+img, svg {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+// =========================================
+// CSS Variables (Light/Dark Theme Support)
+// =========================================
+
+:root {
+  // Default dark theme
+  --color-bg-primary: #{$color-bg-primary};
+  --color-bg-secondary: #{$color-bg-secondary};
+  --color-bg-tertiary: #{$color-bg-tertiary};
+  
+  --color-text-primary: #{$color-text-primary};
+  --color-text-secondary: #{$color-text-secondary};
+  --color-text-tertiary: #{$color-text-tertiary};
+  
+  --color-primary: #{$color-primary};
+  --color-secondary: #{$color-secondary};
+  --color-tertiary: #{$color-tertiary};
+  
+  --gradient-purple: #{$gradient-purple};
+  --gradient-blue: #{$gradient-blue};
+  --gradient-background: #{$gradient-background};
+}
+
+// Light theme overrides (will be applied when body has .light-theme class)
+body.light-theme {
+  --color-bg-primary: #F9F9F9;
+  --color-bg-secondary: #FFFFFF;
+  --color-bg-tertiary: #F0F0F5;
+  
+  --color-text-primary: #1A0B2E;
+  --color-text-secondary: #2A1B4E;
+  --color-text-tertiary: #4A3A6E;
+  
+  --gradient-background: linear-gradient(to bottom, #F9F9F9, #E8E8F0);
+  
+  background: var(--gradient-background);
+}
+
+// =========================================
+// Utility Classes
+// =========================================
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 $spacing-md;
+}
+
+.text-gradient-purple {
+  @include purple-gradient;
+}
+
+.text-gradient-blue {
+  @include blue-gradient;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+// =========================================
+// Animation Classes
+// =========================================
+
+.animate-fade-in {
+  @include fade-in;
+}
+
+.animate-slide-up {
+  @include slide-up;
+}
+
+// =========================================
+// Custom Scrollbar
+// =========================================
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-bg-tertiary);
+  border-radius: $border-radius-full;
+  
+  &:hover {
+    background: var(--color-primary);
+  }
+}

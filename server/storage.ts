@@ -4,7 +4,8 @@ import {
   Category, InsertCategory,
   Message, InsertMessage,
   User, InsertUser,
-  users, tasks, alarms, categories, messages
+  UserSettings, InsertUserSettings, UpdateUserSettings,
+  users, tasks, alarms, categories, messages, userSettings
 } from "../shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -14,6 +15,11 @@ interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // User Settings operations
+  getUserSettings(userId: number): Promise<UserSettings | undefined>;
+  createUserSettings(settings: InsertUserSettings, userId: number): Promise<UserSettings>;
+  updateUserSettings(userId: number, settings: UpdateUserSettings): Promise<UserSettings | undefined>;
   
   // Task operations
   getTasks(userId: number): Promise<Task[]>;
@@ -45,12 +51,14 @@ class MemStorage implements IStorage {
   private alarms: Map<number, Alarm>;
   private categories: Map<number, Category>;
   private messages: Map<number, Message>;
+  private userSettings: Map<number, UserSettings>;
   
   private userId: number;
   private taskId: number;
   private alarmId: number;
   private categoryId: number;
   private messageId: number;
+  private userSettingsId: number;
 
   constructor() {
     this.users = new Map();
@@ -58,12 +66,14 @@ class MemStorage implements IStorage {
     this.alarms = new Map();
     this.categories = new Map();
     this.messages = new Map();
+    this.userSettings = new Map();
     
     this.userId = 1;
     this.taskId = 1;
     this.alarmId = 1;
     this.categoryId = 1;
     this.messageId = 1;
+    this.userSettingsId = 1;
     
     // Pre-populate with default user
     this.createUser({
@@ -72,6 +82,15 @@ class MemStorage implements IStorage {
       name: "Alex",
       email: "alex@example.com"
     });
+    
+    // Pre-populate with default user settings
+    this.createUserSettings({
+      darkMode: true,
+      notifications: true,
+      aiSuggestions: true,
+      autoTaskCreation: true,
+      calendarSync: false
+    }, 1);
     
     // Pre-populate with default categories
     this.createCategory({ name: "Daily", color: "purple" }, 1);
@@ -310,6 +329,48 @@ class MemStorage implements IStorage {
     this.messages.set(id, newMessage);
     return newMessage;
   }
+
+  // User Settings methods
+  async getUserSettings(userId: number): Promise<UserSettings | undefined> {
+    // Find settings by userId (not by id)
+    return Array.from(this.userSettings.values()).find(
+      settings => settings.userId === userId
+    );
+  }
+
+  async createUserSettings(settings: InsertUserSettings, userId: number): Promise<UserSettings> {
+    const id = this.userSettingsId++;
+    const newSettings: UserSettings = {
+      id,
+      userId,
+      darkMode: settings.darkMode ?? true,
+      notifications: settings.notifications ?? true,
+      aiSuggestions: settings.aiSuggestions ?? true,
+      autoTaskCreation: settings.autoTaskCreation ?? true,
+      calendarSync: settings.calendarSync ?? false,
+      updatedAt: new Date()
+    };
+    this.userSettings.set(id, newSettings);
+    return newSettings;
+  }
+
+  async updateUserSettings(userId: number, settingsUpdate: UpdateUserSettings): Promise<UserSettings | undefined> {
+    // Find settings by userId
+    const settings = Array.from(this.userSettings.values()).find(
+      settings => settings.userId === userId
+    );
+    
+    if (!settings) return undefined;
+    
+    const updatedSettings: UserSettings = { 
+      ...settings, 
+      ...settingsUpdate,
+      updatedAt: new Date()
+    };
+    
+    this.userSettings.set(settings.id, updatedSettings);
+    return updatedSettings;
+  }
 }
 
 class DatabaseStorage implements IStorage {
@@ -433,6 +494,43 @@ class DatabaseStorage implements IStorage {
     }).returning();
     return newMessage;
   }
+
+  // User Settings methods
+  async getUserSettings(userId: number): Promise<UserSettings | undefined> {
+    const [settings] = await db.select()
+      .from(userSettings)
+      .where(eq(userSettings.userId, userId));
+    return settings || undefined;
+  }
+
+  async createUserSettings(settings: InsertUserSettings, userId: number): Promise<UserSettings> {
+    const [newSettings] = await db.insert(userSettings)
+      .values({
+        darkMode: settings.darkMode ?? true,
+        notifications: settings.notifications ?? true,
+        aiSuggestions: settings.aiSuggestions ?? true,
+        autoTaskCreation: settings.autoTaskCreation ?? true,
+        calendarSync: settings.calendarSync ?? false,
+        userId,
+        updatedAt: new Date()
+      })
+      .returning();
+    
+    return newSettings;
+  }
+
+  async updateUserSettings(userId: number, settings: UpdateUserSettings): Promise<UserSettings | undefined> {
+    const [updatedSettings] = await db
+      .update(userSettings)
+      .set({
+        ...settings,
+        updatedAt: new Date()
+      })
+      .where(eq(userSettings.userId, userId))
+      .returning();
+      
+    return updatedSettings || undefined;
+  }
 }
 
 // Initialize the database with sample data if it's empty
@@ -450,6 +548,17 @@ async function initializeDatabase() {
       name: "Alex",
       email: "alex@example.com"
     }).returning();
+    
+    // Create default user settings
+    await db.insert(userSettings).values({
+      userId: user.id,
+      darkMode: true,
+      notifications: true,
+      aiSuggestions: true,
+      autoTaskCreation: true,
+      calendarSync: false,
+      updatedAt: new Date()
+    });
     
     // Create default categories
     const [category1] = await db.insert(categories).values({

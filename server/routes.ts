@@ -1,7 +1,14 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTaskSchema, insertAlarmSchema, insertCategorySchema, insertMessageSchema } from "../shared/schema";
+import { 
+  insertTaskSchema, 
+  insertAlarmSchema, 
+  insertCategorySchema, 
+  insertMessageSchema,
+  insertUserSettingsSchema,
+  updateUserSettingsSchema
+} from "../shared/schema";
 import OpenAI from "openai";
 import { authenticate, register, login, getCurrentUser } from "./auth";
 import "./types"; // Import types to extend Express Request
@@ -226,6 +233,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Remove password before sending to client
     const { password, ...userWithoutPassword } = user;
     res.json(userWithoutPassword);
+  });
+
+  // User Settings routes
+  app.get("/api/settings", authenticate, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      // Get user settings or create default settings if none exist
+      let settings = await storage.getUserSettings(req.user.id);
+      
+      if (!settings) {
+        // Create default settings for the user
+        settings = await storage.createUserSettings({
+          darkMode: true,
+          notifications: true,
+          aiSuggestions: true,
+          autoTaskCreation: true,
+          calendarSync: false
+        }, req.user.id);
+      }
+      
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching user settings:", error);
+      res.status(500).json({ error: "Failed to retrieve settings" });
+    }
+  });
+  
+  app.patch("/api/settings", authenticate, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      // Validate the settings data
+      const settingsData = updateUserSettingsSchema.parse(req.body);
+      
+      // Get existing settings or create new ones
+      let settings = await storage.getUserSettings(req.user.id);
+      
+      if (!settings) {
+        // Create new settings with provided data and defaults
+        settings = await storage.createUserSettings({
+          ...settingsData,
+          darkMode: settingsData.darkMode ?? true,
+          notifications: settingsData.notifications ?? true,
+          aiSuggestions: settingsData.aiSuggestions ?? true,
+          autoTaskCreation: settingsData.autoTaskCreation ?? true,
+          calendarSync: settingsData.calendarSync ?? false
+        }, req.user.id);
+      } else {
+        // Update existing settings
+        settings = await storage.updateUserSettings(req.user.id, settingsData);
+      }
+      
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating user settings:", error);
+      res.status(400).json({ 
+        error: "Invalid settings data", 
+        details: error.errors || error.message 
+      });
+    }
   });
 
   // Create HTTP server

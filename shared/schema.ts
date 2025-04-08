@@ -93,12 +93,37 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+// User Settings schema
+export const userSettings = pgTable("user_settings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().unique(),
+  darkMode: boolean("dark_mode").default(true).notNull(),
+  notifications: boolean("notifications").default(true).notNull(),
+  aiSuggestions: boolean("ai_suggestions").default(true).notNull(),
+  autoTaskCreation: boolean("auto_task_creation").default(true).notNull(),
+  calendarSync: boolean("calendar_sync").default(false).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertUserSettingsSchema = createInsertSchema(userSettings).omit({
+  id: true,
+  userId: true,
+  updatedAt: true,
+});
+
+export const updateUserSettingsSchema = insertUserSettingsSchema.partial();
+
+export type InsertUserSettings = z.infer<typeof insertUserSettingsSchema>;
+export type UpdateUserSettings = z.infer<typeof updateUserSettingsSchema>;
+export type UserSettings = typeof userSettings.$inferSelect;
+
 // Define relations between tables
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   tasks: many(tasks),
   alarms: many(alarms),
   categories: many(categories),
   messages: many(messages),
+  settings: one(userSettings),
 }));
 
 export const tasksRelations = relations(tasks, ({ one }) => ({
@@ -130,6 +155,13 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
 export const messagesRelations = relations(messages, ({ one }) => ({
   user: one(users, {
     fields: [messages.userId],
+    references: [users.id],
+  }),
+}));
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+  user: one(users, {
+    fields: [userSettings.userId],
     references: [users.id],
   }),
 }));

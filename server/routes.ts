@@ -31,11 +31,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Not authenticated" });
     }
     try {
+      console.log("Task data received:", req.body);
+      // Make sure date is parsed correctly if it's a string
+      if (req.body.date && typeof req.body.date === 'string') {
+        req.body.date = new Date(req.body.date);
+      }
       const taskData = insertTaskSchema.parse(req.body);
       const task = await storage.createTask(taskData, req.user.id);
       res.status(201).json(task);
     } catch (error) {
-      res.status(400).json({ error: "Invalid task data" });
+      console.error("Task validation error:", error);
+      res.status(400).json({ error: "Invalid task data", details: error.errors || error.message });
     }
   });
 
@@ -86,11 +92,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Not authenticated" });
     }
     try {
+      console.log("Alarm data received:", req.body);
+      // Make sure time is parsed correctly if it's a string
+      if (req.body.time && typeof req.body.time === 'string') {
+        req.body.time = new Date(req.body.time);
+      }
       const alarmData = insertAlarmSchema.parse(req.body);
       const alarm = await storage.createAlarm(alarmData, req.user.id);
       res.status(201).json(alarm);
     } catch (error) {
-      res.status(400).json({ error: "Invalid alarm data" });
+      console.error("Alarm validation error:", error);
+      res.status(400).json({ error: "Invalid alarm data", details: error.errors || error.message });
     }
   });
 

@@ -4,8 +4,10 @@ import {
   Category, InsertCategory,
   Message, InsertMessage,
   User, InsertUser,
-  users
+  users, tasks, alarms, categories, messages
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and } from "drizzle-orm";
 
 interface IStorage {
   // User operations
@@ -187,7 +189,12 @@ class MemStorage implements IStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     const id = this.userId++;
-    const newUser: User = { ...user, id };
+    const newUser: User = { 
+      ...user, 
+      id, 
+      name: user.name || null,
+      email: user.email || null
+    };
     this.users.set(id, newUser);
     return newUser;
   }
@@ -203,7 +210,14 @@ class MemStorage implements IStorage {
 
   async createTask(task: InsertTask, userId: number): Promise<Task> {
     const id = this.taskId++;
-    const newTask: Task = { ...task, id, userId };
+    const newTask: Task = { 
+      ...task, 
+      id, 
+      userId,
+      description: task.description || null,
+      completed: task.completed ?? false,
+      categoryId: task.categoryId || null
+    };
     this.tasks.set(id, newTask);
     return newTask;
   }
@@ -232,7 +246,13 @@ class MemStorage implements IStorage {
 
   async createAlarm(alarm: InsertAlarm, userId: number): Promise<Alarm> {
     const id = this.alarmId++;
-    const newAlarm: Alarm = { ...alarm, id, userId };
+    const newAlarm: Alarm = { 
+      ...alarm, 
+      id, 
+      userId,
+      days: alarm.days || null,
+      isActive: alarm.isActive ?? true
+    };
     this.alarms.set(id, newAlarm);
     return newAlarm;
   }
@@ -284,12 +304,290 @@ class MemStorage implements IStorage {
       ...message, 
       id, 
       userId, 
-      timestamp: new Date() 
+      timestamp: new Date(),
+      isUser: message.isUser ?? true
     };
     this.messages.set(id, newMessage);
     return newMessage;
   }
 }
 
-export const storage = new MemStorage();
+class DatabaseStorage implements IStorage {
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const [newUser] = await db.insert(users).values(user).returning();
+    return newUser;
+  }
+
+  // Task methods
+  async getTasks(userId: number): Promise<Task[]> {
+    return await db.select().from(tasks).where(eq(tasks.userId, userId));
+  }
+
+  async getTask(id: number): Promise<Task | undefined> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task || undefined;
+  }
+
+  async createTask(task: InsertTask, userId: number): Promise<Task> {
+    const [newTask] = await db.insert(tasks).values({
+      ...task,
+      userId
+    }).returning();
+    return newTask;
+  }
+
+  async updateTask(id: number, taskUpdate: Partial<InsertTask>): Promise<Task | undefined> {
+    const [updatedTask] = await db
+      .update(tasks)
+      .set(taskUpdate)
+      .where(eq(tasks.id, id))
+      .returning();
+    return updatedTask || undefined;
+  }
+
+  async deleteTask(id: number): Promise<boolean> {
+    const result = await db.delete(tasks).where(eq(tasks.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Alarm methods
+  async getAlarms(userId: number): Promise<Alarm[]> {
+    return await db.select().from(alarms).where(eq(alarms.userId, userId));
+  }
+
+  async getAlarm(id: number): Promise<Alarm | undefined> {
+    const [alarm] = await db.select().from(alarms).where(eq(alarms.id, id));
+    return alarm || undefined;
+  }
+
+  async createAlarm(alarm: InsertAlarm, userId: number): Promise<Alarm> {
+    const [newAlarm] = await db.insert(alarms).values({
+      ...alarm,
+      userId
+    }).returning();
+    return newAlarm;
+  }
+
+  async updateAlarm(id: number, alarmUpdate: Partial<InsertAlarm>): Promise<Alarm | undefined> {
+    const [updatedAlarm] = await db
+      .update(alarms)
+      .set(alarmUpdate)
+      .where(eq(alarms.id, id))
+      .returning();
+    return updatedAlarm || undefined;
+  }
+
+  async deleteAlarm(id: number): Promise<boolean> {
+    const result = await db.delete(alarms).where(eq(alarms.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Category methods
+  async getCategories(userId: number): Promise<Category[]> {
+    return await db.select().from(categories).where(eq(categories.userId, userId));
+  }
+
+  async getCategory(id: number): Promise<Category | undefined> {
+    const [category] = await db.select().from(categories).where(eq(categories.id, id));
+    return category || undefined;
+  }
+
+  async createCategory(category: InsertCategory, userId: number): Promise<Category> {
+    const [newCategory] = await db.insert(categories).values({
+      ...category,
+      userId
+    }).returning();
+    return newCategory;
+  }
+
+  // Message methods
+  async getMessages(userId: number, limit?: number): Promise<Message[]> {
+    const allMessages = await db.select()
+      .from(messages)
+      .where(eq(messages.userId, userId))
+      .orderBy(messages.timestamp);
+      
+    if (limit && allMessages.length > limit) {
+      return allMessages.slice(-limit);
+    }
+    
+    return allMessages;
+  }
+
+  async createMessage(message: InsertMessage, userId: number): Promise<Message> {
+    const [newMessage] = await db.insert(messages).values({
+      ...message,
+      userId,
+      timestamp: new Date()
+    }).returning();
+    return newMessage;
+  }
+}
+
+// Initialize the database with sample data if it's empty
+async function initializeDatabase() {
+  // Check if users table is empty
+  const result = await db.select().from(users);
+  
+  if (result.length === 0) {
+    console.log("Initializing database with sample data...");
+    
+    // Create default user
+    const [user] = await db.insert(users).values({
+      username: "demo",
+      password: "demo",
+      name: "Alex",
+      email: "alex@example.com"
+    }).returning();
+    
+    // Create default categories
+    const [category1] = await db.insert(categories).values({
+      name: "Daily", 
+      color: "purple",
+      userId: user.id
+    }).returning();
+    
+    const [category2] = await db.insert(categories).values({
+      name: "Work", 
+      color: "blue",
+      userId: user.id
+    }).returning();
+    
+    const [category3] = await db.insert(categories).values({
+      name: "Personal", 
+      color: "purple",
+      userId: user.id
+    }).returning();
+    
+    // Create sample tasks
+    await db.insert(tasks).values([
+      {
+        title: "Morning routine",
+        description: "Complete morning meditation and exercise",
+        date: new Date(new Date().setHours(7, 0, 0, 0)),
+        completed: false,
+        categoryId: category1.id,
+        userId: user.id
+      },
+      {
+        title: "Team meeting",
+        description: "Weekly sprint planning with design team",
+        date: new Date(new Date().setHours(10, 0, 0, 0)),
+        completed: false,
+        categoryId: category2.id,
+        userId: user.id
+      },
+      {
+        title: "Doctor's appointment",
+        description: "Annual check-up",
+        date: new Date(new Date().setHours(14, 0, 0, 0)),
+        completed: false,
+        categoryId: category3.id,
+        userId: user.id
+      },
+      {
+        title: "Write daily report",
+        description: "Include project updates",
+        date: new Date(new Date().setHours(16, 30, 0, 0)),
+        completed: false,
+        categoryId: category2.id,
+        userId: user.id
+      },
+      {
+        title: "Review presentation slides",
+        description: "Check for errors and improve visuals",
+        date: new Date(new Date().setHours(9, 30, 0, 0)),
+        completed: true,
+        categoryId: category2.id,
+        userId: user.id
+      }
+    ]);
+    
+    // Create sample alarms
+    await db.insert(alarms).values([
+      {
+        title: "Morning Workout",
+        time: new Date(new Date().setHours(7, 0, 0, 0)),
+        days: "Daily",
+        isActive: true,
+        userId: user.id
+      },
+      {
+        title: "Meeting Reminder",
+        time: new Date(new Date().setHours(10, 45, 0, 0)),
+        days: "Mon-Fri",
+        isActive: true,
+        userId: user.id
+      },
+      {
+        title: "Evening Meditation",
+        time: new Date(new Date().setHours(21, 0, 0, 0)),
+        days: "Daily",
+        isActive: true,
+        userId: user.id
+      },
+      {
+        title: "Weekend Run",
+        time: new Date(new Date().setHours(8, 30, 0, 0)),
+        days: "Sat-Sun",
+        isActive: false,
+        userId: user.id
+      }
+    ]);
+    
+    // Create sample messages
+    await db.insert(messages).values([
+      {
+        content: "Hi there! I'm Aura, your personal AI assistant. How can I help you today?",
+        isUser: false,
+        userId: user.id,
+        timestamp: new Date(Date.now() - 5000)
+      },
+      {
+        content: "I need to schedule a doctor's appointment tomorrow at 2pm",
+        isUser: true,
+        userId: user.id,
+        timestamp: new Date(Date.now() - 4000)
+      },
+      {
+        content: "I've added a task for your doctor's appointment tomorrow at 2:00 PM. Would you like me to set a reminder as well?",
+        isUser: false,
+        userId: user.id,
+        timestamp: new Date(Date.now() - 3000)
+      },
+      {
+        content: "Yes, please set a reminder 30 minutes before",
+        isUser: true,
+        userId: user.id,
+        timestamp: new Date(Date.now() - 2000)
+      },
+      {
+        content: "I've set a reminder for 1:30 PM tomorrow. Anything else you need help with?",
+        isUser: false,
+        userId: user.id,
+        timestamp: new Date(Date.now() - 1000)
+      }
+    ]);
+    
+    console.log("Database initialized with sample data");
+  }
+}
+
+// Initialize the database
+initializeDatabase().catch(err => {
+  console.error("Error initializing database:", err);
+});
+
+export const storage = new DatabaseStorage();
 export type { IStorage };
